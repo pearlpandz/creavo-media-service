@@ -43,11 +43,14 @@ router.post("/media", upload.single("media"), async (req, res) => {
 
 router.post("/frame", upload.single("frame"), async (req, res) => {
   try {
+    console.log("api calling...");
+    console.log("req.file", req.file);
     const path = req.file ? req.file.path : "uploads/placeholder-image.jpg";
+    console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
-    console.log(req.file.path);
+    console.log("urlPath", urlPath);
     const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
-    console.log(url);
+    console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
     res.status(500).json({ message: "Error uploading!", error: error.message });
