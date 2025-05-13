@@ -103,6 +103,43 @@ router.post("/media", upload.single("media"), async (req, res) => {
   }
 });
 
+// Modify delete logic to handle both original and thumbnail images
+router.delete("/delete/media/:filename", (req, res) => {
+  const filename = req.params.filename;
+  const folderPath = path.join(__dirname, "..", "uploads/media");
+
+  // Extract the unique part of the filename
+  const uniquePart = filename.split("_")[1];
+  const originalFilePath = path.join(folderPath, filename);
+  const thumbFilePath = path.join(folderPath, `thumb_${uniquePart}`);
+
+  let deletedFiles = [];
+
+  // Delete original file if it exists
+  if (fs.existsSync(originalFilePath)) {
+    fs.unlinkSync(originalFilePath);
+    deletedFiles.push(filename);
+  } else {
+    console.log("Original file not found:", originalFilePath);
+  }
+
+  // Delete thumbnail file if it exists
+  if (fs.existsSync(thumbFilePath)) {
+    fs.unlinkSync(thumbFilePath);
+    deletedFiles.push(`thumb_${uniquePart}`);
+  } else {
+    console.log("Thumbnail file not found:", thumbFilePath);
+  }
+
+  if (deletedFiles.length > 0) {
+    return res
+      .status(200)
+      .json({ message: "Deleted successfully", deletedFiles });
+  } else {
+    return res.status(404).json({ error: "Files not found" });
+  }
+});
+
 router.post("/frame", upload.single("frame"), async (req, res) => {
   try {
     console.log("api calling...");
@@ -119,7 +156,7 @@ router.post("/frame", upload.single("frame"), async (req, res) => {
   }
 });
 
-router.delete("/delete/:folder/:filename", (req, res) => {
+router.delete("/delete/frame/:filename", (req, res) => {
   const foldername = req.params.folder;
   const filename = req.params.filename;
   const filePath = path.join(
