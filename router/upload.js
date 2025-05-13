@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
+const sharp = require("sharp");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -27,15 +28,76 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage }); // For processing multipart/form-data
 
+const ensureDirectoryExists = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+};
+
 // POST method to store frame in DB
 router.post("/media", upload.single("media"), async (req, res) => {
   try {
-    const path = req.file ? req.file.path : "uploads/placeholder-image.jpg";
-    const urlPath = path.replace(/\\/g, "/");
-    console.log(req.file.path);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
-    console.log(url);
-    res.status(200).json({ path: urlPath, url });
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const originalImage = req.file;
+
+    // Add a unique identifier to the original file name
+    const originalPath = path.join(
+      __dirname,
+      "..",
+      "uploads/media",
+      `original_${originalImage.filename}`
+    );
+    const url = `${req.protocol}://${req.get("host")}/uploads/media/original_${
+      originalImage.filename
+    }`;
+
+    // Update the thumbnail path accordingly
+    const thumbnailPath = path.join(
+      __dirname,
+      "..",
+      "uploads/media",
+      `thumb_${originalImage.filename}`
+    );
+
+    // Ensure the destination directory exists before moving the file
+    const destinationDir = path.dirname(originalPath);
+
+    try {
+      ensureDirectoryExists(destinationDir);
+    } catch (err) {
+      return res.status(500).json({
+        message: "Failed to ensure destination directory",
+        error: err.message,
+      });
+    }
+
+    // Attempt to move the file
+    try {
+      fs.renameSync(req.file.path, originalPath);
+    } catch (err) {
+      return res
+        .status(500)
+        .json({ message: "Failed to save original image", error: err.message });
+    }
+
+    await sharp(originalPath).resize(150).toFile(thumbnailPath);
+
+    const thumbnailUrl = `${req.protocol}://${req.get(
+      "host"
+    )}/uploads/media/thumb_${originalImage.filename}`;
+
+    // Clean up the original temporary file (if it's still there)
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+
+    res.status(200).json({
+      url,
+      thumbnailUrl,
+    });
   } catch (error) {
     res.status(500).json({ message: "Error uploading!", error: error.message });
   }
