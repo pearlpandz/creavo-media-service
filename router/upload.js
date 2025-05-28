@@ -44,22 +44,23 @@ router.post("/media", upload.single("media"), async (req, res) => {
     const originalImage = req.file;
 
     // Add a unique identifier to the original file name
+    const baseFileName = path.parse(originalImage.filename).name;
     const originalPath = path.join(
       __dirname,
       "..",
       "uploads/media",
-      `original_${originalImage.filename}`
+      `original_${baseFileName}.webp`
     );
-    const url = `${req.protocol}://${req.get("host")}/uploads/media/original_${
-      originalImage.filename
-    }`;
+    const url = `${req.protocol}://${req.get(
+      "host"
+    )}/uploads/media/original_${baseFileName}.webp`;
 
     // Update the thumbnail path accordingly
     const thumbnailPath = path.join(
       __dirname,
       "..",
       "uploads/media",
-      `thumb_${originalImage.filename}`
+      `thumb_${baseFileName}.webp`
     );
 
     // Ensure the destination directory exists before moving the file
@@ -76,18 +77,21 @@ router.post("/media", upload.single("media"), async (req, res) => {
 
     // Attempt to move the file
     try {
-      fs.renameSync(req.file.path, originalPath);
+      await sharp(req.file.path).webp({ quality: 100 }).toFile(originalPath);
     } catch (err) {
       return res
         .status(500)
         .json({ message: "Failed to save original image", error: err.message });
     }
 
-    await sharp(originalPath).resize(150).toFile(thumbnailPath);
+    await sharp(originalPath)
+      .resize(150)
+      .webp({ quality: 70 })
+      .toFile(thumbnailPath);
 
     const thumbnailUrl = `${req.protocol}://${req.get(
       "host"
-    )}/uploads/media/thumb_${originalImage.filename}`;
+    )}/uploads/media/thumb_${baseFileName}.webp`;
 
     // Clean up the original temporary file (if it's still there)
     if (fs.existsSync(req.file.path)) {
