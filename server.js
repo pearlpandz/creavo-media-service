@@ -26,13 +26,15 @@ app.use(
 // Middleware to parse JSON bodies
 app.use(express.json()); // Parses JSON data
 app.use(express.urlencoded({ extended: true })); // Parses form data
-app.use("/uploads", express.static("uploads"), {
+app.use("/uploads", express.static("uploads", {
   setHeaders: (res, path) => {
-    if (path.endsWith('.jpg') || path.endsWith('.png') || path.endsWith('.webp')) {
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+      if (path.endsWith('.jpg') || path.endsWith('.png') || path.endsWith('.webp')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable'); // 1 year
+      }
     }
-  }
-}); // Serves uploaded files
+})); // Serves uploaded files
+
+
 
 // Set Cache-Control only for GET requests (from disk cache 200)
 // app.use((req, res, next) => {

@@ -11,6 +11,7 @@ const storage = multer.diskStorage({
     const fieldFolder = {
       media: "uploads/media",
       frame: "uploads/frames",
+      frametype: "uploads/frametypes",
     };
 
     const folder = fieldFolder[file.fieldname] || "uploads/others";
@@ -161,7 +162,42 @@ router.post("/frame", upload.single("frame"), async (req, res) => {
 });
 
 router.delete("/delete/frame/:filename", (req, res) => {
-  const foldername = req.params.folder;
+  const foldername = "frame";
+  const filename = req.params.filename;
+  const filePath = path.join(
+    __dirname,
+    "..",
+    `uploads/${foldername}`,
+    filename
+  );
+  console.log("filePath", filePath);
+  if (fs.existsSync(filePath)) {
+    console.log("File exists, deleting...");
+    fs.unlinkSync(filePath);
+    return res.status(200).json({ message: "Deleted successfully" });
+  } else {
+    return res.status(404).json({ error: "File not found" });
+  }
+});
+
+router.post("/frametype", upload.single("frametype"), async (req, res) => {
+  try {
+    console.log("api calling...");
+    console.log("req.file", req.file);
+    const path = req.file ? req.file.path : "uploads/placeholder-image.jpg";
+    console.log("path", path);
+    const urlPath = path.replace(/\\/g, "/");
+    console.log("urlPath", urlPath);
+    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    console.log("url", url);
+    res.status(200).json({ path: urlPath, url });
+  } catch (error) {
+    res.status(500).json({ message: "Error uploading!", error: error.message });
+  }
+});
+
+router.delete("/delete/frametype/:filename", (req, res) => {
+  const foldername = "frametypes";
   const filename = req.params.filename;
   const filePath = path.join(
     __dirname,
