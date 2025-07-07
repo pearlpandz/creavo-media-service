@@ -36,6 +36,18 @@ const ensureDirectoryExists = (dirPath) => {
   }
 };
 
+const tryUnlink = async (filePath, retries = 3, delay = 300) => {
+  try {
+    await fs.promises.unlink(filePath);
+  } catch (err) {
+    if (err.code === "EBUSY" && retries > 0) {
+      setTimeout(() => tryUnlink(filePath, retries - 1, delay), delay);
+    } else if (err.code !== "ENOENT") {
+      console.error("Failed to unlink file:", err.message);
+    }
+  }
+};
+
 // POST method to store frame in DB
 router.post("/media", upload.single("media"), async (req, res) => {
   try {
@@ -96,9 +108,7 @@ router.post("/media", upload.single("media"), async (req, res) => {
     )}/uploads/media/thumb_${baseFileName}.webp`;
 
     // Clean up the original temporary file (if it's still there)
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
+    await tryUnlink(req.file.path);
 
     res.status(200).json({
       url,
