@@ -67,7 +67,7 @@ router.post("/media", upload.single("media"), async (req, res) => {
       "uploads/media",
       `original_${baseFileName}.webp`
     );
-    const url = `${req.protocol}://${req.get(
+    const url = `https://${req.get(
       "host"
     )}/uploads/media/original_${baseFileName}.webp`;
 
@@ -105,7 +105,7 @@ router.post("/media", upload.single("media"), async (req, res) => {
       .webp({ quality: 70 })
       .toFile(thumbnailPath);
 
-    const thumbnailUrl = `${req.protocol}://${req.get(
+    const thumbnailUrl = `https://${req.get(
       "host"
     )}/uploads/media/thumb_${baseFileName}.webp`;
 
@@ -166,7 +166,7 @@ router.post("/event", upload.single("event"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/${urlPath}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -203,7 +203,7 @@ router.post("/frame", upload.single("frame"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/${urlPath}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -240,7 +240,7 @@ router.post("/frametype", upload.single("frametype"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/${urlPath}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -275,7 +275,7 @@ router.post("/userdetails", upload.single("userdetails"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/${urlPath}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -310,7 +310,7 @@ router.post("/other", upload.single("other"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/${urlPath}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
