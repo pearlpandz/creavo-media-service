@@ -8,6 +8,7 @@ module.exports = {
       env: {
         NODE_ENV: "development",
         PORT: 4005,
+        UPLOAD_BASE_PATH: "/var/www/dev/backend/media-service/shared/uploads",
       },
     },
     {
@@ -18,6 +19,7 @@ module.exports = {
       env: {
         NODE_ENV: "production",
         PORT: 4007,
+        UPLOAD_BASE_PATH: "/var/www/prod/backend/media-service/shared/uploads",
       },
     },
   ],

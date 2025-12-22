@@ -5,6 +5,10 @@ const fs = require("fs");
 const multer = require("multer");
 const sharp = require("sharp");
 
+const UPLOAD_BASE_PATH =
+  process.env.UPLOAD_BASE_PATH ||
+  "/var/www/dev/backend/media-service/shared/uploads";
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Folder name based on field name
@@ -62,9 +66,8 @@ router.post("/media", upload.single("media"), async (req, res) => {
     // Add a unique identifier to the original file name
     const baseFileName = path.parse(originalImage.filename).name;
     const originalPath = path.join(
-      __dirname,
-      "..",
-      "uploads/media",
+      UPLOAD_BASE_PATH,
+      "media",
       `original_${baseFileName}.webp`
     );
     const url = `https://${req.get(
@@ -73,9 +76,8 @@ router.post("/media", upload.single("media"), async (req, res) => {
 
     // Update the thumbnail path accordingly
     const thumbnailPath = path.join(
-      __dirname,
-      "..",
-      "uploads/media",
+      UPLOAD_BASE_PATH,
+      "media",
       `thumb_${baseFileName}.webp`
     );
 
@@ -124,7 +126,7 @@ router.post("/media", upload.single("media"), async (req, res) => {
 // Modify delete logic to handle both original and thumbnail images
 router.delete("/delete/media/:filename", (req, res) => {
   const filename = req.params.filename;
-  const folderPath = path.join(__dirname, "..", "uploads/media");
+  const folderPath = path.join(UPLOAD_BASE_PATH, "media");
 
   // Extract the unique part of the filename
   const uniquePart = filename.split("_")[1];
@@ -178,12 +180,7 @@ router.delete("/delete/event/:filename", (req, res) => {
   const foldername = "event";
   const filename = req.params.filename;
   console.log("delete event file calling", { filename });
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -215,12 +212,7 @@ router.delete("/delete/frames/:filename", (req, res) => {
   const foldername = "frames";
   const filename = req.params.filename;
   console.log("delete frame file calling", { filename });
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -251,12 +243,7 @@ router.post("/frametype", upload.single("frametype"), async (req, res) => {
 router.delete("/delete/frametype/:filename", (req, res) => {
   const foldername = "frametypes";
   const filename = req.params.filename;
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -286,12 +273,7 @@ router.post("/userdetails", upload.single("userdetails"), async (req, res) => {
 router.delete("/delete/userdetails/:filename", (req, res) => {
   const foldername = "userdetails";
   const filename = req.params.filename;
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -322,12 +304,7 @@ router.delete("/delete/other/:filename", (req, res) => {
   const foldername = "other";
   const filename = req.params.filename;
   console.log("delete other file calling", { filename });
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
