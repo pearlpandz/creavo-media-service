@@ -13,15 +13,16 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Folder name based on field name
     const fieldFolder = {
-      media: "uploads/media",
-      event: "uploads/event",
-      frame: "uploads/frames",
-      frametype: "uploads/frametypes",
-      userdetails: "uploads/userdetails",
-      other: "uploads/other",
+      media: "media",
+      event: "event",
+      frame: "frames",
+      frametype: "frametypes",
+      userdetails: "userdetails",
+      other: "other",
     };
 
-    const folder = fieldFolder[file.fieldname] || "uploads/others";
+    const folderName = fieldFolder[file.fieldname] || "other";
+    const folder = path.join(UPLOAD_BASE_PATH, folderName);
 
     // Ensure the folder exists
     fs.mkdirSync(folder, { recursive: true });
