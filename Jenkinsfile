@@ -17,7 +17,7 @@ pipeline {
        ========================= */
     environment {
         APP_NAME    = 'creavo-media-service'
-        DEPLOY_BASE = '/var/www/creavo/media-service'
+        DEPLOY_BASE = '/var/www/dev/backend/media-service'
         RELEASES    = "${DEPLOY_BASE}/releases"
         CURRENT     = "${DEPLOY_BASE}/current"
         SHARED      = "${DEPLOY_BASE}/shared"
