@@ -22,6 +22,8 @@ const storage = multer.diskStorage({
     };
 
     const folderName = fieldFolder[file.fieldname] || "other";
+    console.log("UPLOAD_BASE_PATH:", UPLOAD_BASE_PATH);
+    console.log("Uploading to folder:", folderName);
     const folder = path.join(UPLOAD_BASE_PATH, folderName);
 
     // Ensure the folder exists
