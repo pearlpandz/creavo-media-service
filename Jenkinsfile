@@ -16,7 +16,7 @@ pipeline {
        GLOBAL VARIABLES
        ========================= */
     environment {
-        APP_NAME    = 'creavo-media-service'
+        APP_NAME    = "media-service-${ENV}"
         DEPLOY_BASE = "/var/www/${ENV}/backend/media-service"
         RELEASES    = "${DEPLOY_BASE}/releases"
         CURRENT     = "${DEPLOY_BASE}/current"
@@ -94,6 +94,8 @@ pipeline {
                     if (params.ENV == 'prod') {
                         pm2Cmd += " --env production"
                     }
+
+                    pm2Cmd += " --only ${APP_NAME}"
 
                     pm2Cmd += " --update-env"
 
