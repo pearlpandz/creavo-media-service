@@ -91,11 +91,13 @@ router.post("/media", upload.single("media"), async (req, res) => {
 
     // ---- PUBLIC URL PATHS (URL only) ----
     const originalPublicPath = `${UPLOAD_PUBLIC_PATH}/media/original_${baseFileName}.webp`;
+    console.log("originalPublicPath:", originalPublicPath);
     const thumbnailPublicPath = `${UPLOAD_PUBLIC_PATH}/media/thumb_${baseFileName}.webp`;
-
+    console.log("thumbnailPublicPath:", thumbnailPublicPath);
     const originalUrl = `${protocol}://${host}${originalPublicPath}`;
+    console.log("originalUrl:", originalUrl);
     const thumbnailUrl = `${protocol}://${host}${thumbnailPublicPath}`;
-
+    console.log("thumbnailUrl:", thumbnailUrl);
     // Ensure destination directory exists
     const destinationDir = path.dirname(originalDiskPath);
     ensureDirectoryExists(destinationDir);
@@ -125,7 +127,6 @@ router.post("/media", upload.single("media"), async (req, res) => {
     });
   }
 });
-
 
 // Modify delete logic to handle both original and thumbnail images
 router.delete("/delete/media/:filename", (req, res) => {
