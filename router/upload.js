@@ -5,19 +5,26 @@ const fs = require("fs");
 const multer = require("multer");
 const sharp = require("sharp");
 
+const UPLOAD_BASE_PATH =
+  process.env.UPLOAD_BASE_PATH ||
+  "/var/www/dev/backend/media-service/shared/uploads";
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Folder name based on field name
     const fieldFolder = {
-      media: "uploads/media",
-      event: "uploads/event",
-      frame: "uploads/frames",
-      frametype: "uploads/frametypes",
-      userdetails: "uploads/userdetails",
-      other: "uploads/other",
+      media: "media",
+      event: "event",
+      frame: "frames",
+      frametype: "frametypes",
+      userdetails: "userdetails",
+      other: "other",
     };
 
-    const folder = fieldFolder[file.fieldname] || "uploads/others";
+    const folderName = fieldFolder[file.fieldname] || "other";
+    console.log("UPLOAD_BASE_PATH:", UPLOAD_BASE_PATH);
+    console.log("Uploading to folder:", folderName);
+    const folder = path.join(UPLOAD_BASE_PATH, folderName);
 
     // Ensure the folder exists
     fs.mkdirSync(folder, { recursive: true });
@@ -59,72 +66,72 @@ router.post("/media", upload.single("media"), async (req, res) => {
 
     const originalImage = req.file;
 
-    // Add a unique identifier to the original file name
+    // ---- CONFIG (important separation) ----
+    const UPLOAD_PUBLIC_PATH = "/uploads";
+
+    const protocol = "https";
+    const host = req.get("host");
+
+    // ---------------------------------------
+
     const baseFileName = path.parse(originalImage.filename).name;
-    const originalPath = path.join(
-      __dirname,
-      "..",
-      "uploads/media",
+
+    // ---- DISK PATHS (filesystem only) ----
+    const originalDiskPath = path.join(
+      UPLOAD_BASE_PATH,
+      "media",
       `original_${baseFileName}.webp`
     );
-    const url = `${req.protocol}://${req.get(
-      "host"
-    )}/uploads/media/original_${baseFileName}.webp`;
 
-    // Update the thumbnail path accordingly
-    const thumbnailPath = path.join(
-      __dirname,
-      "..",
-      "uploads/media",
+    const thumbnailDiskPath = path.join(
+      UPLOAD_BASE_PATH,
+      "media",
       `thumb_${baseFileName}.webp`
     );
 
-    // Ensure the destination directory exists before moving the file
-    const destinationDir = path.dirname(originalPath);
+    // ---- PUBLIC URL PATHS (URL only) ----
+    const originalPublicPath = `${UPLOAD_PUBLIC_PATH}/media/original_${baseFileName}.webp`;
+    console.log("originalPublicPath:", originalPublicPath);
+    const thumbnailPublicPath = `${UPLOAD_PUBLIC_PATH}/media/thumb_${baseFileName}.webp`;
+    console.log("thumbnailPublicPath:", thumbnailPublicPath);
+    const originalUrl = `${protocol}://${host}${originalPublicPath}`;
+    console.log("originalUrl:", originalUrl);
+    const thumbnailUrl = `${protocol}://${host}${thumbnailPublicPath}`;
+    console.log("thumbnailUrl:", thumbnailUrl);
+    // Ensure destination directory exists
+    const destinationDir = path.dirname(originalDiskPath);
+    ensureDirectoryExists(destinationDir);
 
-    try {
-      ensureDirectoryExists(destinationDir);
-    } catch (err) {
-      return res.status(500).json({
-        message: "Failed to ensure destination directory",
-        error: err.message,
-      });
-    }
+    // Save original image
+    await sharp(originalImage.path)
+      .webp({ quality: 100 })
+      .toFile(originalDiskPath);
 
-    // Attempt to move the file
-    try {
-      await sharp(req.file.path).webp({ quality: 100 }).toFile(originalPath);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: "Failed to save original image", error: err.message });
-    }
-
-    await sharp(originalPath)
+    // Create thumbnail
+    await sharp(originalDiskPath)
       .resize(150)
       .webp({ quality: 70 })
-      .toFile(thumbnailPath);
+      .toFile(thumbnailDiskPath);
 
-    const thumbnailUrl = `${req.protocol}://${req.get(
-      "host"
-    )}/uploads/media/thumb_${baseFileName}.webp`;
+    // Remove temp file
+    await tryUnlink(originalImage.path);
 
-    // Clean up the original temporary file (if it's still there)
-    await tryUnlink(req.file.path);
-
-    res.status(200).json({
-      url,
-      thumbnailUrl,
+    return res.status(200).json({
+      url: originalUrl,
+      thumbnailUrl: thumbnailUrl,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error uploading!", error: error.message });
+    return res.status(500).json({
+      message: "Error uploading!",
+      error: error.message,
+    });
   }
 });
 
 // Modify delete logic to handle both original and thumbnail images
 router.delete("/delete/media/:filename", (req, res) => {
   const filename = req.params.filename;
-  const folderPath = path.join(__dirname, "..", "uploads/media");
+  const folderPath = path.join(UPLOAD_BASE_PATH, "media");
 
   // Extract the unique part of the filename
   const uniquePart = filename.split("_")[1];
@@ -166,7 +173,7 @@ router.post("/event", upload.single("event"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/event/${req.file.filename}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -178,12 +185,7 @@ router.delete("/delete/event/:filename", (req, res) => {
   const foldername = "event";
   const filename = req.params.filename;
   console.log("delete event file calling", { filename });
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -203,7 +205,9 @@ router.post("/frame", upload.single("frame"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/frames/${
+      req.file.filename
+    }`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -215,12 +219,7 @@ router.delete("/delete/frames/:filename", (req, res) => {
   const foldername = "frames";
   const filename = req.params.filename;
   console.log("delete frame file calling", { filename });
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -240,7 +239,9 @@ router.post("/frametype", upload.single("frametype"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/frametypes/${
+      req.file.filename
+    }`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -251,12 +252,7 @@ router.post("/frametype", upload.single("frametype"), async (req, res) => {
 router.delete("/delete/frametype/:filename", (req, res) => {
   const foldername = "frametypes";
   const filename = req.params.filename;
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -275,7 +271,9 @@ router.post("/userdetails", upload.single("userdetails"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/userdetails/${
+      req.file.filename
+    }`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -286,12 +284,7 @@ router.post("/userdetails", upload.single("userdetails"), async (req, res) => {
 router.delete("/delete/userdetails/:filename", (req, res) => {
   const foldername = "userdetails";
   const filename = req.params.filename;
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
@@ -310,7 +303,7 @@ router.post("/other", upload.single("other"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `${req.protocol}://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/other/${req.file.filename}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -322,12 +315,7 @@ router.delete("/delete/other/:filename", (req, res) => {
   const foldername = "other";
   const filename = req.params.filename;
   console.log("delete other file calling", { filename });
-  const filePath = path.join(
-    __dirname,
-    "..",
-    `uploads/${foldername}`,
-    filename
-  );
+  const filePath = path.join(UPLOAD_BASE_PATH, foldername, filename);
   console.log("filePath", filePath);
   if (fs.existsSync(filePath)) {
     console.log("File exists, deleting...");
