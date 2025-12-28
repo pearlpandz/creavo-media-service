@@ -66,65 +66,66 @@ router.post("/media", upload.single("media"), async (req, res) => {
 
     const originalImage = req.file;
 
-    // Add a unique identifier to the original file name
+    // ---- CONFIG (important separation) ----
+    const UPLOAD_PUBLIC_PATH = "/uploads";
+
+    const protocol = "https";
+    const host = req.get("host");
+
+    // ---------------------------------------
+
     const baseFileName = path.parse(originalImage.filename).name;
-    const originalPath = path.join(
+
+    // ---- DISK PATHS (filesystem only) ----
+    const originalDiskPath = path.join(
       UPLOAD_BASE_PATH,
       "media",
       `original_${baseFileName}.webp`
     );
-    const url = `https://${req.get(
-      "host"
-    )}/uploads/media/original_${baseFileName}.webp`;
 
-    // Update the thumbnail path accordingly
-    const thumbnailPath = path.join(
+    const thumbnailDiskPath = path.join(
       UPLOAD_BASE_PATH,
       "media",
       `thumb_${baseFileName}.webp`
     );
 
-    // Ensure the destination directory exists before moving the file
-    const destinationDir = path.dirname(originalPath);
+    // ---- PUBLIC URL PATHS (URL only) ----
+    const originalPublicPath = `${UPLOAD_PUBLIC_PATH}/media/original_${baseFileName}.webp`;
+    const thumbnailPublicPath = `${UPLOAD_PUBLIC_PATH}/media/thumb_${baseFileName}.webp`;
 
-    try {
-      ensureDirectoryExists(destinationDir);
-    } catch (err) {
-      return res.status(500).json({
-        message: "Failed to ensure destination directory",
-        error: err.message,
-      });
-    }
+    const originalUrl = `${protocol}://${host}${originalPublicPath}`;
+    const thumbnailUrl = `${protocol}://${host}${thumbnailPublicPath}`;
 
-    // Attempt to move the file
-    try {
-      await sharp(req.file.path).webp({ quality: 100 }).toFile(originalPath);
-    } catch (err) {
-      return res
-        .status(500)
-        .json({ message: "Failed to save original image", error: err.message });
-    }
+    // Ensure destination directory exists
+    const destinationDir = path.dirname(originalDiskPath);
+    ensureDirectoryExists(destinationDir);
 
-    await sharp(originalPath)
+    // Save original image
+    await sharp(originalImage.path)
+      .webp({ quality: 100 })
+      .toFile(originalDiskPath);
+
+    // Create thumbnail
+    await sharp(originalDiskPath)
       .resize(150)
       .webp({ quality: 70 })
-      .toFile(thumbnailPath);
+      .toFile(thumbnailDiskPath);
 
-    const thumbnailUrl = `https://${req.get(
-      "host"
-    )}/uploads/media/thumb_${baseFileName}.webp`;
+    // Remove temp file
+    await tryUnlink(originalImage.path);
 
-    // Clean up the original temporary file (if it's still there)
-    await tryUnlink(req.file.path);
-
-    res.status(200).json({
-      url,
-      thumbnailUrl,
+    return res.status(200).json({
+      url: originalUrl,
+      thumbnailUrl: thumbnailUrl,
     });
   } catch (error) {
-    res.status(500).json({ message: "Error uploading!", error: error.message });
+    return res.status(500).json({
+      message: "Error uploading!",
+      error: error.message,
+    });
   }
 });
+
 
 // Modify delete logic to handle both original and thumbnail images
 router.delete("/delete/media/:filename", (req, res) => {
