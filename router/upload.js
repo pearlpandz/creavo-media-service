@@ -205,7 +205,9 @@ router.post("/frame", upload.single("frame"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `https://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/frames/${
+      req.file.filename
+    }`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
