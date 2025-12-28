@@ -173,7 +173,7 @@ router.post("/event", upload.single("event"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `https://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/event/${req.file.filename}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -239,7 +239,9 @@ router.post("/frametype", upload.single("frametype"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `https://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/frametypes/${
+      req.file.filename
+    }`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -269,7 +271,9 @@ router.post("/userdetails", upload.single("userdetails"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `https://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/userdetails/${
+      req.file.filename
+    }`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
@@ -299,7 +303,7 @@ router.post("/other", upload.single("other"), async (req, res) => {
     console.log("path", path);
     const urlPath = path.replace(/\\/g, "/");
     console.log("urlPath", urlPath);
-    const url = `https://${req.get("host")}/${urlPath}`;
+    const url = `https://${req.get("host")}/uploads/other/${req.file.filename}`;
     console.log("url", url);
     res.status(200).json({ path: urlPath, url });
   } catch (error) {
