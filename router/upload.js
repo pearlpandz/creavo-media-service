@@ -75,12 +75,18 @@ router.post("/media", upload.single("media"), async (req, res) => {
     // ---------------------------------------
 
     const baseFileName = path.parse(originalImage.filename).name;
+    const fileExtension = path
+      .extname(originalImage.originalname)
+      .toLowerCase();
+
+    // Determine the extension for the original file
+    const originalExtension = fileExtension === ".gif" ? ".gif" : ".webp";
 
     // ---- DISK PATHS (filesystem only) ----
     const originalDiskPath = path.join(
       UPLOAD_BASE_PATH,
       "media",
-      `original_${baseFileName}.webp`
+      `original_${baseFileName}${originalExtension}`
     );
 
     const thumbnailDiskPath = path.join(
@@ -90,7 +96,7 @@ router.post("/media", upload.single("media"), async (req, res) => {
     );
 
     // ---- PUBLIC URL PATHS (URL only) ----
-    const originalPublicPath = `${UPLOAD_PUBLIC_PATH}/media/original_${baseFileName}.webp`;
+    const originalPublicPath = `${UPLOAD_PUBLIC_PATH}/media/original_${baseFileName}${originalExtension}`;
     console.log("originalPublicPath:", originalPublicPath);
     const thumbnailPublicPath = `${UPLOAD_PUBLIC_PATH}/media/thumb_${baseFileName}.webp`;
     console.log("thumbnailPublicPath:", thumbnailPublicPath);
@@ -98,17 +104,23 @@ router.post("/media", upload.single("media"), async (req, res) => {
     console.log("originalUrl:", originalUrl);
     const thumbnailUrl = `${protocol}://${host}${thumbnailPublicPath}`;
     console.log("thumbnailUrl:", thumbnailUrl);
+
     // Ensure destination directory exists
     const destinationDir = path.dirname(originalDiskPath);
     ensureDirectoryExists(destinationDir);
 
-    // Save original image
-    await sharp(originalImage.path)
-      .webp({ quality: 100 })
-      .toFile(originalDiskPath);
+    if (fileExtension === ".gif") {
+      // Save the original GIF file as is
+      await fs.promises.copyFile(originalImage.path, originalDiskPath);
+    } else {
+      // Save original image as webp
+      await sharp(originalImage.path)
+        .webp({ quality: 100 })
+        .toFile(originalDiskPath);
+    }
 
-    // Create thumbnail
-    await sharp(originalDiskPath)
+    // Create thumbnail in webp format
+    await sharp(originalImage.path)
       .resize(150)
       .webp({ quality: 70 })
       .toFile(thumbnailDiskPath);
